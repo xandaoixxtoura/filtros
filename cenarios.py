@@ -1,7 +1,15 @@
 # cenarios.py
 import numpy as np
-from proto_butterworth import butterworth_pf_analog, butterworth_pb_analog, butterworth_pha_analog
-from proto_chebyshev import chebyshev_pb_analog  # futuramente posso incluir chebyshev_pf_analog
+from proto_butterworth import (
+    butterworth_pf_analog,
+    butterworth_pb_analog,
+    butterworth_pha_analog,
+)
+from proto_chebyshev import (
+    chebyshev_pb_analog,
+    chebyshev_pha_analog,
+    chebyshev_pf_analog,
+)
 import topologia_sallen_key as topo_sk
 import topologia_mfb as topo_mfb
 
@@ -46,6 +54,8 @@ def executar(tipo_filtro: str, config: str, topologia: str, params: dict):
         "mensagem": "",
     }
 
+    # -------- Butterworth --------
+
     # Caso 1: Butterworth passa-baixa.
     if config == 'Butterworth' and tipo_filtro == 'passa-baixa':
         H_tf, n = butterworth_pb_analog(Amin, Amax, Ws, Wp)
@@ -66,23 +76,32 @@ def executar(tipo_filtro: str, config: str, topologia: str, params: dict):
         # e Wp_hz como frequência de passagem superior (fp2).
         H_tf, n = butterworth_pf_analog(Amin, Amax, Ws, Wp)
         resultado["protótipo"] = {"H_str": str(H_tf), "n": n}
-        # Por enquanto, a topologia Sallen-Key ainda não implementa passa-faixa;
-        # eu chamo mesmo assim para manter a estrutura, mas posso receber só uma mensagem.
         resultado["topologia_result"] = _chamar_topologia(topologia, tipo_filtro, H_tf, n)
         return resultado
 
-    # Caso 4: Chebyshev passa-baixa (protótipo já implementado).
+    # -------- Chebyshev --------
+
+    # Caso 4: Chebyshev passa-baixa.
     if config == 'Chebyshev' and tipo_filtro == 'passa-baixa':
         H_tf, n = chebyshev_pb_analog(Amin, Amax, Ws, Wp)
         resultado["protótipo"] = {"H_str": str(H_tf), "n": n}
         resultado["topologia_result"] = _chamar_topologia(topologia, tipo_filtro, H_tf, n)
         return resultado
 
-    # Caso 5: Chebyshev passa-faixa ainda não implementado.
+    # Caso 5: Chebyshev passa-alta.
+    if config == 'Chebyshev' and tipo_filtro == 'passa-alta':
+        H_tf, n = chebyshev_pha_analog(Amin, Amax, Ws, Wp)
+        resultado["protótipo"] = {"H_str": str(H_tf), "n": n}
+        resultado["topologia_result"] = _chamar_topologia(topologia, tipo_filtro, H_tf, n)
+        return resultado
+
+    # Caso 6: Chebyshev passa-faixa.
     if config == 'Chebyshev' and tipo_filtro == 'passa-faixa':
-        msg = "Chebyshev passa-faixa ainda não implementado."
-        print(">>", msg)
-        resultado["mensagem"] = msg
+        # Ws_hz -> frequência de passagem inferior (fp1)
+        # Wp_hz -> frequência de passagem superior (fp2)
+        H_tf, n = chebyshev_pf_analog(Amin, Amax, Ws, Wp)
+        resultado["protótipo"] = {"H_str": str(H_tf), "n": n}
+        resultado["topologia_result"] = _chamar_topologia(topologia, tipo_filtro, H_tf, n)
         return resultado
 
     # Qualquer outra combinação cai aqui como ainda não implementada.
